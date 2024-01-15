@@ -1,0 +1,114 @@
+<!--   threeLEDcheckbox2.html    -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>html testing on elearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--link rel="icon" href="data:,"--> <!-- this supresses the favicon request -->
+  <link rel="icon" type="image/png" href="/static/images/star.png">
+  <style>
+    html {font-family: Arial, Helvetica, sans-serif; text-align: center;}
+    h1 {font-size: 1.8rem; color: black;}
+      .topnav {overflow: hidden; background-color: lightgoldenrodyellow;}
+    body {margin: 0;}
+      .white_LED_display {font-size: 1.2rem; font-weight: normal; color: black;}
+      .green_LED_display {font-size: 1.2rem; font-weight: normal; color: darkgreen;}
+      .red_LED_display {font-size: 1.2rem; font-weight: normal; color: indianred;}
+      .status {font-size: 1.2rem; color: orangered;}
+  </style>
+ </head>
+
+<body>
+  <div class="topnav">
+    <h1>threeLEDcheckbox</h1>
+    </div>
+          <p> 
+            <input type="checkbox" name="whiteLEDgpio" onchange="toggleCheckbox(this)" id="whiteLEDbox">
+            <label class="white_LED_display"> White LED (GPIO 14) is </label>
+            <label class="status"><span id="whiteLEDstate"></span></label>
+          </p>
+
+          <p> 
+            <input type="checkbox" name="greenLEDgpio" onchange="toggleCheckbox(this)" id="greenLEDbox">
+            <label class="green_LED_display"> Green LED (GPIO 15) is </label>
+            <label class="status"><span id="greenLEDstate"></span></label>
+          </p>
+
+          <p> 
+            <input type="checkbox" name="redLEDgpio" onchange="toggleCheckbox(this)" id="redLEDbox">
+            <label class="red_LED_display"> Red LED (GPIO 18) is </label>
+            <label class="status"><span id="redLEDstate"></span></label>
+          </p>
+    </div>
+  </div>
+
+  <script> 
+     // only for 1st time page comes up: request server reads LEDs, and send results to insert in webpage
+    var xhr = new XMLHttpRequest(); // must put this before the function !
+    window.addEventListener('load', initialWebPageDisplay); // setup a listener 
+    xhr.open("GET", "/newWebPageDisplay", true); // 2nd request to server (after request of initial web page
+    xhr.send();
+
+     // when server responds to the above GET, do this function
+    function initialWebPageDisplay(){ // Function to get GPIO states on the webpage when it loads for the first time
+      xhr.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {  // 4 = request completed; 200 = "OK"
+          console.log("hello from initialWebPageDisplay");
+          console.log(this.responseText); // this is the json, sent by server (see python code)
+          var myObj = JSON.parse(this.responseText);
+          updateHTMLpage(myObj); }}
+    }; // end of function() 
+
+    // for ongoing checking of box
+    function toggleCheckbox (element) {
+      var xhr = new XMLHttpRequest();
+      var elementArray = (element.id).split('L')         // eg. whiteLEDbox --> [0] = white, [1] = LEDbox
+      var elementStateID = elementArray[0] + "LEDstate"  // eg. whiteLEDstate
+      if (element.checked) {
+        xhr.open("GET", "/update/"+element.name+"/on", true); }
+      else {
+        xhr.open("GET", "/update/"+element.name+"/off", true); }
+      xhr.send(); // have the server turn off or on the appropriate LED
+
+      xhr.onreadystatechange = function() { // have the server read all LED status, and send it back for page update
+        if (this.readyState == 4 && this.status == 200) {  // 4 = request completed; 200 = "OK"
+          console.log("hello from toggleCheckbox");
+          console.log(this.responseText); // this is the json, sent by server (see python code)
+          var myObj = JSON.parse(this.responseText);
+          updateHTMLpage(myObj); }}
+    }; 
+
+    function updateHTMLpage (jsonResponse) {
+      console.log(jsonResponse); // e.g. Object { whiteLEDgpioNumber: "14", currentWhiteLEDstatus: "0" }
+      var whiteLEDstate = jsonResponse.currentWhiteLEDstatus;
+      var greenLEDstate = jsonResponse.currentGreenLEDstatus;
+      var redLEDstate   = jsonResponse.currentRedLEDstatus;
+       // update the checkbox and the state on the webpage
+      if (whiteLEDstate == "1") {
+        document.getElementById("whiteLEDbox").checked = true;
+        document.getElementById("whiteLEDstate").innerHTML = "on";} 
+      else {
+        document.getElementById("whiteLEDbox").checked = false;
+        document.getElementById("whiteLEDstate").innerHTML = "off";}
+
+      if (greenLEDstate == "1") {
+        document.getElementById("greenLEDbox").checked = true;
+        document.getElementById("greenLEDstate").innerHTML = "on";} 
+      else {
+        document.getElementById("greenLEDbox").checked = false;
+        document.getElementById("greenLEDstate").innerHTML = "off";}
+
+      if (redLEDstate == "1") {
+        document.getElementById("redLEDbox").checked = true;
+        document.getElementById("redLEDstate").innerHTML = "on";} 
+      else {
+        document.getElementById("redLEDbox").checked = false;
+        document.getElementById("redLEDstate").innerHTML = "off";}
+    };
+  </script>
+</body>
+
+</html>     
+
+
